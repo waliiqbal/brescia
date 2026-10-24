@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import CoverImage from "@/components/site/CoverImage";
 import { notFound } from "next/navigation";
 import { Badge } from "@/components/ui/Badge";
 import { ButtonLink } from "@/components/ui/Button";
@@ -14,7 +14,6 @@ import {
 } from "@/modules/articles/article.service";
 import { JsonLd } from "@/components/site/JsonLd";
 import { SITE_URL, siteConfig } from "@/lib/site";
-import { formatDate } from "@/lib/utils";
 
 export async function generateStaticParams() {
   const slugs = await getArticleSlugs();
@@ -52,6 +51,8 @@ export default async function ArticlePage({
 
   const related = await getRelatedArticles(article, 3);
   const url = `${SITE_URL}/news/${article.slug}`;
+  // A story that opens with its own picture does not repeat the cover on top.
+  const startsWithImage = /^\s*(<p>\s*)?<img\b/i.test(article.content);
 
   return (
     <>
@@ -75,12 +76,6 @@ export default async function ArticlePage({
 
           <div className="flex items-center gap-3">
             <Badge>{article.category}</Badge>
-            <time
-              dateTime={article.publishedAt}
-              className="text-[11px] font-bold uppercase tracking-widest text-gold"
-            >
-              {formatDate(article.publishedAt)}
-            </time>
           </div>
 
           <h1 className="mt-4 font-heading text-3xl font-bold leading-tight text-cream sm:text-4xl md:text-5xl">
@@ -88,16 +83,15 @@ export default async function ArticlePage({
           </h1>
           <p className="mt-4 text-lg text-cream/70">{article.excerpt}</p>
 
-          <div className="relative mt-8 aspect-[16/9] overflow-hidden rounded-xl border border-gold/30 shadow-card">
-            <Image
-              src={article.image}
-              alt=""
-              fill
-              priority
-              sizes="(min-width: 896px) 896px, 100vw"
-              className="object-cover"
-            />
-          </div>
+          {!startsWithImage && (
+            <div className="relative mt-8 aspect-[16/9] overflow-hidden rounded-xl border border-gold/30 shadow-card">
+              <CoverImage
+                src={article.image}
+                priority
+                sizes="(min-width: 896px) 896px, 100vw"
+              />
+            </div>
+          )}
 
           <div
             className="article-content mx-auto mt-10 max-w-3xl"

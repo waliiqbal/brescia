@@ -3,6 +3,8 @@ export interface Photo {
   albumId: string;
   src: string;
   alt: string;
+  /** Cloudinary id (not set for demo photos). */
+  publicId?: string;
 }
 
 export interface Album {
@@ -12,6 +14,7 @@ export interface Album {
   /** ISO date string. */
   createdAt: string;
   photos: Photo[];
+  isDemo: boolean;
 }
 
 /** One photo with its album, as shown on the home page gallery. */

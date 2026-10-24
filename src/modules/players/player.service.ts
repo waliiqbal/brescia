@@ -1,4 +1,6 @@
 import { about } from "@/data/about";
+import type { StaffMember } from "@/modules/about/about.types";
+import { slugify } from "@/lib/utils";
 import { players } from "@/data/players";
 import { PLAYER_ROLES, type Player, type PlayerRole } from "./player.types";
 
@@ -26,7 +28,22 @@ export async function getRelatedPlayers(player: Player, limit = 4) {
   return [...sameRole, ...rest].slice(0, limit);
 }
 
+const withSlug = (member: StaffMember): StaffMember => ({
+  ...member,
+  slug: member.slug ?? slugify(member.name),
+});
+
 /** Coaching and support staff shown under the squad. */
 export async function getSupportStaff() {
-  return about.coaching;
+  return about.coaching.map(withSlug);
+}
+
+export async function getStaffBySlug(slug: string) {
+  const staff = await getSupportStaff();
+  return staff.find((member) => member.slug === slug) ?? null;
+}
+
+export async function getStaffSlugs() {
+  const staff = await getSupportStaff();
+  return staff.map((member) => member.slug as string);
 }

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getArticles } from "@/modules/articles/article.service";
 import { getAlbums } from "@/modules/gallery/gallery.service";
-import { getPlayers } from "@/modules/players/player.service";
+import { getPlayers, getSupportStaff } from "@/modules/players/player.service";
 import { SITE_URL } from "@/lib/site";
 
 const pages = [
@@ -16,9 +16,10 @@ const pages = [
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const [articles, players, albums] = await Promise.all([
+  const [articles, players, staff, albums] = await Promise.all([
     getArticles(),
     getPlayers(),
+    getSupportStaff(),
     getAlbums(),
   ]);
 
@@ -35,6 +36,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...players.map((p) => ({
       url: `${SITE_URL}/squad/${p.slug}`,
       priority: 0.6,
+    })),
+    ...staff.map((s) => ({
+      url: `${SITE_URL}/squad/staff/${s.slug}`,
+      priority: 0.5,
     })),
     ...albums.map((a) => ({
       url: `${SITE_URL}/gallery/${a.slug}`,

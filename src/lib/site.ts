@@ -3,6 +3,7 @@
 
 export const LOGO_SRC = "/images/logo.png";
 export const HASHTAG_SRC = "/images/hashtag.png";
+export const PARTNER_LOGO_SRC = "/images/afs-logo.png";
 
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
@@ -11,6 +12,21 @@ export const SITE_URL = (
 /** Search engines may index the site only when this is explicitly turned on. */
 export const ALLOW_INDEXING = process.env.ALLOW_INDEXING === "true";
 
+export type SocialPlatform = "instagram" | "facebook" | "x" | "youtube" | "tiktok";
+
+export interface SocialLink {
+  label: string;
+  platform: SocialPlatform;
+  href: string;
+}
+
+const socials: SocialLink[] = [
+  { label: "Instagram", platform: "instagram", href: "https://instagram.com/brescialions" },
+  { label: "Facebook", platform: "facebook", href: "https://www.facebook.com/share/1DWsyQBJLn/?mibextid=wwXIfr" },
+  { label: "X", platform: "x", href: "https://x.com/brescialions" },
+  { label: "TikTok", platform: "tiktok", href: "https://tiktok.com/@brescialions" },
+];
+
 export const siteConfig = {
   name: "Brescia Lions",
   tagline: "Un simbolo, una città, una famiglia",
@@ -18,16 +34,9 @@ export const siteConfig = {
   hashtag: "#OrgoglioDiBrescia",
   contact: {
     address: "Brescia, Lombardia, Italia",
-    email: "info@brescialions.it",
-    phone: "+39 000 000 000",
+    email: "info@brescialionst10.com",
   },
-  socials: [
-    { label: "Instagram", short: "IG", href: "#" },
-    { label: "Facebook", short: "FB", href: "#" },
-    { label: "X", short: "X", href: "#" },
-    { label: "YouTube", short: "YT", href: "#" },
-    { label: "TikTok", short: "TT", href: "#" },
-  ],
+  socials,
 };
 
 export const navLinks = [

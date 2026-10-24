@@ -18,9 +18,14 @@ Frontend and backend both live in this single Next.js project. There is NO separ
 - MongoDB with Mongoose
 - Zod for validation
 - Cloudinary for images (confirmed; MongoDB stores only URLs)
-- Email: SMTP via nodemailer (contact form). User provides keys in `.env.local`
+- Email: SMTP via nodemailer (admin OTP emails in Phase 7, contact form in Phase 10). User provides keys in `.env.local` (never in chat)
 - Hosting: undecided, ignore for now. User provides all secrets (MongoDB, Cloudinary, SMTP) in `.env.local`; never hardcode or commit them.
-- Auth: email + password (bcrypt), session in JWT cookie, roles `admin` / `editor`
+- Auth (DECIDED): there is exactly ONE admin account. Website visitors have NO login, signup or accounts. No seed user, no roles, no Users section/module.
+  - First-time setup at `/admin/setup`: the admin creates their own account (email + password) and verifies the email with an OTP sent to the email they typed. It works only while no admin exists (permanently closed after). Optional lock: env `ADMIN_EMAIL`, when set, restricts setup to that one email (use it on the live site, or create the admin immediately after deploying).
+  - After the setup OTP is correct the admin is NOT logged in automatically: `/admin/setup` sends them to `/admin/login?created=1` (green "account is ready" message) and they log in with the email + password they chose; a password reset likewise ends on `/admin/login?reset=1`. The user asked for exactly this flow.
+  - Login at `/admin/login` with email + password (bcrypt), session in an httpOnly JWT cookie (`JWT_SECRET`).
+  - Forgot / reset password: enter email, receive a 6-digit OTP by email, enter OTP, set new password. OTP is stored hashed, expires in 10 minutes, max 5 wrong attempts, resend cooldown; the response never reveals whether the email exists.
+  - No signup API/route other than the one-time setup. Every mutating route still calls `requireAdmin()`.
 - Custom Tailwind admin UI (no shadcn/ui) — site is small
 - Next 16 note: `middleware.ts` is now `proxy.ts`. Read `node_modules/next/dist/docs/` before using unfamiliar APIs.
 
@@ -60,7 +65,7 @@ Define these as tokens in `src/app/globals.css` (`@theme`), never hardcode hex i
 - SEO (sitemap, meta, Open Graph for WhatsApp/social sharing), https, fast images
 
 ## Admin panel (`app/admin`, password protected)
-Sections: Dashboard (counts), Main Banner, News (draft/publish), Matches, Results, Points Table, Squad, Gallery (albums, bulk upload), Sponsors, About Us, Messages (+ subscribers), Settings (contact, socials, footer), Users (team logins).
+Sections: Dashboard (counts), Main Banner, News (draft/publish), Matches, Results, Points Table, Squad, Gallery (albums, bulk upload), Sponsors, About Us, Messages (+ subscribers), Settings (contact, socials, footer). There is no Users section (single admin).
 Extras: drag & drop images (auto resize), "Are you sure?" before every delete, search in every list.
 Anything saved appears on the website immediately (use `revalidatePath` / `revalidateTag`).
 
@@ -79,17 +84,17 @@ brescia/
 │   │   │   ├── login/page.tsx
 │   │   │   └── (panel)/            # layout (sidebar + auth check), Dashboard, and per section:
 │   │   │                           # banners, news, matches, points-table, squad, gallery,
-│   │   │                           # sponsors, about, messages, settings, users
+│   │   │                           # sponsors, about, messages, settings
 │   │   │                           # (list page.tsx, new/page.tsx, [id]/page.tsx)
 │   │   └── api/                    # route.ts = CONTROLLER (REST endpoints)
 │   │       ├── articles/ (route.ts, [id]/route.ts)
 │   │       ├── banners/ matches/ standings/ players/ gallery/ sponsors/
-│   │       │   about/ messages/ subscribers/ settings/ users/ auth/
+│   │       │   about/ messages/ subscribers/ settings/ auth/
 │   │       └── upload/route.ts     # image upload + delete
 │   ├── modules/                    # SERVICE + SCHEMA, one folder per feature
 │   │   ├── articles/ (article.schema.ts, article.dto.ts, article.service.ts)
 │   │   └── banners, matches, standings, players, gallery, sponsors, about,
-│   │       messages, subscribers, settings, users, auth  (same 3 files each)
+│   │       messages, subscribers, settings, auth  (auth = admin account + OTP)  (same 3 files each)
 │   ├── components/
 │   │   ├── ui/       # Button, Card, Badge, Modal, ConfirmDialog
 │   │   ├── site/     # Navbar, Footer, HeroSlider, MatchCard, NewsCard, PlayerCard,
@@ -97,7 +102,7 @@ brescia/
 │   │   └── admin/    # Sidebar, DataTable, ImageDropzone, RichTextEditor, section forms
 │   ├── lib/          # db.ts, auth.ts (requireAdmin), upload.ts, mail.ts, utils.ts
 │   └── proxy.ts      # protects /admin/*
-├── .env.local        # MONGODB_URI, JWT_SECRET, CLOUDINARY_*, SMTP_*
+├── .env.local        # MONGODB_URI, JWT_SECRET, ADMIN_EMAIL, CLOUDINARY_*, EMAIL_*
 └── next.config.ts, postcss.config.mjs, tsconfig.json, package.json
 ```
 
@@ -136,14 +141,45 @@ The user tests after every phase. Build one phase at a time. After each phase ru
 | 3 | **News** (list, filter, search, detail, share buttons) + **Contact** page (DONE) | Static | News pages, contact page layout |
 | 4 | **Fixtures & Results** (DONE) (tabs, Won/Lost, points table) + **About Us** page | Static | Fixtures, results, points table, About |
 | 5 | **Squad** (DONE) (role filter, player detail) + **Gallery** (albums, album page, lightbox) | Static | Squad and gallery pages |
-| 6 | **Polish (DONE, awaiting user approval):** SEO (meta, sitemap, OG), 404/loading states, mobile pass, full review. User approves the design here | Static | Whole website end to end |
-| 7 | **Backend foundation:** admin login (`proxy.ts`, `requireAdmin()`, seed admin user), Cloudinary upload/delete, admin layout + sidebar + Dashboard | Backend | Login/logout, `/admin` blocked without login, upload |
-| 8 | **Dynamic:** News, Banners, Gallery (schema, dto, service, API routes, admin pages; website now reads from MongoDB) | Backend | Add/edit/delete news, banner, album; see it on the site |
+| 6 | **Polish (DONE):** SEO (meta, sitemap, OG), 404/loading states, mobile pass, full review. User approves the design here | Static | Whole website end to end |
+| 7 | **Backend foundation (DONE):** single-admin auth (`/admin/setup` first-time account + email OTP verify, login, forgot/reset password with email OTP, `proxy.ts`, `requireAdmin()`), SMTP mail helper, Cloudinary upload/delete, admin layout + sidebar + Dashboard | Backend | Create the admin account, OTP email arrives, login/logout, forgot + reset password, `/admin` blocked without login, upload |
+| 8 | **Dynamic (DONE, awaiting user test):** News, Banners, Gallery (schema, dto, service, API routes, admin pages; website now reads from MongoDB) | Backend | Add/edit/delete news, banner, album; see it on the site |
 | 9 | **Dynamic:** Matches + Results + Points Table, Squad, Sponsors, About Us, Settings | Backend | Same, for these sections |
-| 10 | **Contact + Messages + Subscribers + Users**, SMTP email, final security check (`requireAdmin()` on every mutating route), testing | Backend | Form to admin inbox, subscribe, team users, full test |
+| 10 | **Contact + Messages + Subscribers**, contact form email, final security check (`requireAdmin()` on every mutating route), testing | Backend | Form to admin inbox, subscribe, full test |
+
+## HANDOFF NOTE (read first in a new session)
+Where the project stands right now (the site builds with 0 type errors):
+- Phases 1-8 are done. Phase 9 (admin-managed Matches/Results/Points Table, Squad + Staff, Sponsors, About Us, Settings) has NOT started: an earlier attempt was reverted on purpose. Those sections still read sample data from `src/data/` through `modules/*/*.service.ts`. News, Banners and Gallery are fully dynamic (MongoDB + admin panel).
+- The user has not created the admin account yet. Setup is at `/admin/setup` (any email gets the OTP; `ADMIN_EMAIL` is optional). The real database `brescia` already holds the demo news/banners/albums (flagged `isDemo`).
+- Home page order now: banner slider, Upcoming Fixtures ("Coming Soon" card, schedule not announced), Latest News slider, About, Meet the Squad slider, Photo Gallery, Our Sponsors (sample sponsors), footer. A "Join the Pride" band was tried and REMOVED at the user's request; do not add it again unless asked.
+- League has not started: results show "Results Coming Soon" and the points table is all zeros (`LEAGUE_STARTED`/`SCHEDULE_ANNOUNCED` flags in `src/data/matches.ts`).
+- The live Vercel demo (https://brescia-nine.vercel.app) is an OLD static build and does not have the admin/backend; redeploying needs the env vars listed below in the Status section.
+- How the user likes to work (Hinglish): keep replies short; for SMALL tweaks only run `tsc` + `eslint` (and a quick look) and say so, do NOT run full browser test suites; use the full API/browser tests only for big or risky work (auth, database, admin, deploy). Do not start big work without a go-ahead; if the user says "stop", stop immediately. Never `taskkill chrome.exe`.
 
 ## Status
-Phases 1-5 are DONE and approved. Phase 6 (Polish) is built and verified (build, lint, tsc pass; audit of 16 routes at 360/820/1280px found no overflow, no broken images, no console errors; all 44 internal links return 200) and awaits the user's approval of the whole static design. Next: Phase 7 (Backend foundation: admin login, Cloudinary upload, admin layout) once the user approves.
+Phases 1-7 are DONE. Phase 8 (News, Banners and Gallery are now dynamic: schema, dto, service, REST routes, admin pages, website reads MongoDB) is built and verified in BOTH dev and production mode against the separate test database: 74 API tests + 45 browser UI tests passed, all 698 image URLs on the public pages returned 200; build, lint and tsc pass. It awaits the user's own test. Next: Phase 9 (Matches + Results + Points Table, Squad, Sponsors, About Us, Settings) after the user approves Phase 8.
+
+The user creates the admin account at `/admin/setup` with any email they can open (`ADMIN_EMAIL` is optional and currently empty). The real `brescia` database has no admin and no content yet (only empty collections); after creating the account the admin clicks "Load demo content" on the Dashboard to fill News, Banners and Gallery with samples. The live Vercel demo (https://brescia-nine.vercel.app) is still the OLD static build: before redeploying, add the env vars on Vercel (`MONGODB_URI`, `JWT_SECRET`, `ADMIN_EMAIL`, `CLOUDINARY_*`, `EMAIL_*`).
+
+Phase 8 notes:
+- Modules `articles`, `banners`, `gallery` each have `*.schema.ts`, `*.dto.ts`, `*.service.ts`; public pages call the same services, which now read MongoDB (public functions only return published/active/non-empty items; admin functions are `*ForAdmin`). Types still live in `*.types.ts` and carry `isDemo` + `imagePublicId`.
+- REST routes (all wrapped in `withAdmin`, bodies validated with zod): `/api/articles[/id]`, `/api/banners[/id]` + `/api/banners/reorder`, `/api/gallery[/id]` + `/photos` + `/photos/[photoId]` (PATCH `{cover:true}`, DELETE), `/api/seed` (`{action:"load"|"remove"}`). After every change the controller calls `revalidateSite()` (`lib/cache.ts`, `revalidatePath("/", "layout")`) so the pre-built public pages update at once.
+- Rules: update DTOs have NO `.default()` (a PATCH must not reset fields); article HTML is sanitized on save (`lib/html.ts`, sanitize-html: no scripts, event handlers, iframes, outside images); only images from our own Cloudinary folder are accepted (`lib/images.ts` `imageDto`); a story cannot be published without a cover; slugs are unique (auto `title`, `title-2`...); replacing/deleting an item deletes its Cloudinary image (demo images have no `publicId`, so nothing is deleted); button links must be `/page` or `https://`.
+- Demo content: `modules/seed/seed.service.ts` copies `src/data/{articles,banners,gallery}.ts` into MongoDB flagged `isDemo`; "Remove demo content" deletes only flagged records. Keep `src/data/` and the seed until client handover, then delete both (Phase 10). Other sections (matches, players, sponsors, about) still read `src/data/` until Phase 9.
+- Admin UI: `ArticleForm` + `RichTextEditor` (Tiptap v3: bold/italic/underline, H2/H3, lists, quote, link, image upload), `BannerForm`/`BannerList` (up/down order, live/hidden switch), `AlbumCreateForm`/`AlbumManager` (multi-photo upload 3 at a time, make cover, delete photo/album), `DeleteButton` (confirm dialog), light-panel primitives in `components/admin/ui.tsx`. `ImageDropzone` takes `persistedPublicId`: removing the saved image only clears the form (server deletes it on save), removing a fresh upload deletes it at once. Browser helpers: `lib/image-client.ts`.
+- Home page sliders: the hero banner always autoplays every 5 s (no pause on hover; a manual click on a dot/arrow restarts the timer). "Latest News" loads the 12 newest stories (featured first); with more than 3 it becomes a `ScrollRow scrollbar` slider (3 cards on desktop, 2 on tablet, ~1 with a peek on phone; swipe, arrows and a thin gold scrollbar), with 3 or fewer it stays a plain 3-column grid. `/news` still lists everything in a filterable grid.
+- Home page: shows the default crest slide (`modules/banners/default-banner.ts`) when no banner is live, a "No news yet" line, and hides the gallery section when empty. Empty public sections never crash.
+- There is NO `loading.tsx` in `(site)`: with it, `notFound()` returned HTTP 200 (soft 404) because the page had already started streaming. Do not add it back.
+- `next typegen` must be run after adding new routes so `RouteContext`/`PageProps` types exist.
+
+Phase 7 notes:
+- Env names in use: `MONGODB_URI`, `JWT_SECRET` (96 chars, generated; must be >= 32), `ADMIN_EMAIL`, `CLOUDINARY_*`, `EMAIL_HOST` / `EMAIL_PORT` / `EMAIL_USER` / `EMAIL_PASS` (Gmail app password; optional `EMAIL_FROM`). The old `SMTP_*` lines in `.env.local` are unused. `MAIL_MODE=console` (dev only) prints emails to the server log instead of sending.
+- Auth code: `modules/auth/` (`admin.schema.ts`, `auth.dto.ts`, `otp.ts`, `auth.mail.ts`, `auth.service.ts`), `lib/auth.ts` (session cookie `brescia_admin`, `getCurrentAdmin`, `requireAdminPage`, `withAdmin`), `lib/session-token.ts` (jose JWT, shared with `proxy.ts`), `lib/api.ts` (`parseBody`, `apiError`, same-origin check), `lib/mail.ts` (nodemailer). Routes: `/api/auth/{setup,setup/verify,login,logout,forgot,reset}`, `/api/upload` (POST multipart, DELETE json) wrapped in `withAdmin`.
+- Rules implemented: single admin enforced by a unique `singleton` field; setup only while no verified admin exists; `ADMIN_EMAIL` is now OPTIONAL: if empty, ANY email typed on `/admin/setup` gets the OTP and the first person to verify becomes the admin (the user asked for this); if set, only that email may create the account (recommended on the live site, since until the admin exists anyone could open `/admin/setup` first); OTP 6 digits, HMAC-hashed, 10 min expiry, 5 attempts (counted atomically), 60 s resend cooldown; login locks for 15 min after 5 failures; forgot-password never reveals whether the email exists (code is sent via `after()`); password reset bumps `sessionVersion`, which logs out old sessions; passwords min 10 chars with a letter and a number; bcrypt cost 12.
+- Admin UI: `app/admin/(auth)/{login,setup,forgot-password}` (dark brand theme, forms in `components/admin/auth/`), `app/admin/(panel)/` (light theme `bg-paper text-ink`, `Sidebar` with disabled "Soon" items until each section is built, `LogoutButton`, Dashboard with system status + a temporary "Image upload check"). `ImageDropzone` (`components/admin/ImageDropzone.tsx`) resizes big photos in the browser (max 2400px, webp) and uploads to `/api/upload` (limit 4 MB because Vercel allows 4.5 MB bodies); Cloudinary folders are `brescia/<folder>`; uploads are checked by file signature. In Phase 8+ use `ImageDropzone` in the News/Banner/Gallery forms and delete the temporary `AdminUploadCheck`. Light-panel buttons: `Button` variants `dark` and `outlineDark`.
+- `next.config.ts` allows `res.cloudinary.com/<cloud>/**` images and has a `NEXT_DIST_DIR` switch so a second dev server (for tests) can run beside the normal one; `.next-test/` is git-ignored and eslint-ignored.
+- Gotcha: Next allows only ONE `next dev` per folder. If a stale background server holds port 3000, the user's own `npm run dev` does nothing and they keep seeing old code. Check `netstat -ano | grep :3000` and the process start time before blaming the code; stop only that PID.
+- Testing tips: run `NEXT_DIST_DIR=.next-test MONGODB_URI=<...brescia_test...> ADMIN_EMAIL=... MAIL_MODE=console npx next dev -p 3100`, never test against the real `brescia` database. NEVER `taskkill /IM chrome.exe` (it closes the user's own Chrome); kill only the specific PID.
 
 Notes for all phases:
 - Home page: HeroSlider with 7 sample slides (autoplay, dots, arrows, swipe; mobile has an extra dark overlay for text contrast), upcoming matches, latest news, about, squad slider, photo gallery with lightbox, sponsors.
@@ -153,12 +189,17 @@ Notes for all phases:
 - Phase 3: `/news` filters by category chips + search using plain links and a GET form (`?category=...&q=...`, no client JS). `/news/[slug]` has share buttons (WhatsApp/Facebook/X), related stories, OG metadata, and `generateStaticParams`; draft articles return 404. Article HTML is rendered with `.article-content` styles in `globals.css` (sanitize the HTML on save in Phase 8). `PageHeader` is the title band for all inner pages.
 - Phase 4: `/fixtures` (tabs All / Upcoming via `?tab=upcoming`) and `/results` share `FixturesView` (match rows + sticky points table with Brescia highlighted; tab links: All -> /fixtures, Upcoming -> /fixtures?tab=upcoming, Results -> /results). Won/Lost/Tie/No-result badges are from the Lions' point of view. Match service: `getUpcomingMatches`, `getResults`, `getAllMatches`, `getStandings`. `/about` has Our Story, Story Behind The Crest (6 crest elements), Mission & Vision, Owners & Management, Coaching Staff (silhouette placeholders until photos are uploaded; `StaffCard`). Home page `AboutSection` and `/about` share `StatsList`.
 - Phase 5: `/squad` filters by role with `?role=` (chips via the generic `FilterChips`), shows a Support Staff section (from `about.coaching`, only when no role filter). `/squad/[slug]` has photo, shirt number, role/captain badges, batting/bowling style, profile and teammates. `/gallery` lists albums (`AlbumCard`), `/gallery/[slug]` shows `PhotoGrid` with the shared `Lightbox` (also used by the home `PhotoMosaic`; keys: Esc, left/right arrows). Services added: `getPlayers(role)`, `getPlayerBySlug`, `getRelatedPlayers`, `getSupportStaff`, `getAlbums`, `getAlbumBySlug`.
+- Sliders (`ScrollRow`): arrows appear only when there is something to scroll to (hidden when everything fits, left arrow only after scrolling, right arrow disappears at the end); `/squad` Support Staff is a `ScrollRow scrollbar flush gap="gap-4 sm:gap-5"` whose cards use EXACTLY the same columns/widths/gaps as the players grid above (4 on desktop, 3 on tablet, 2 on phone: `lg:w-[calc(25%-0.9375rem)]` etc.), so they line up pixel for pixel; with more than 4 coaches the extra ones are reached by the slider (verified: 7 sample coaches).
+- League not started: `LEAGUE_STARTED = false` in `src/data/matches.ts` removes the sample results and puts every team on 0/0/0/0 in the points table (note under the table says the league has not started); `/results` and the Fixtures page show `ComingSoonCard` ("Results Coming Soon" / "Fixtures Coming Soon"). About stats show 0 matches / 0 wins and the history text no longer claims wins. Still inconsistent demo content seeded in MongoDB (kept on purpose, user said keep dummy for now): news match reports ("Lions roar to a 6-wicket win", "Lions battle past Torino Kings"), banner 5 "Celebrate Every Win - Five wins from six", and the "Preview" story. Offer to rewrite them before launch.
+- Schedule not announced: `SCHEDULE_ANNOUNCED = false` in `src/data/matches.ts` switches the sample upcoming matches off, so the home "Upcoming Fixtures" section and `/fixtures` (All + Upcoming tabs) show the `ComingSoonCard`. The same card appears automatically whenever there is no upcoming match (also once the data comes from MongoDB in Phase 9). The played results and the points table are still sample data (ask the user whether to hide them too).
+- Staff profiles: coaching staff cards (on `/squad` and `/about`, plain grid, no slider) open `/squad/staff/[slug]` (photo 3:4 like players, Role/Experience/Speciality cards, profile text split on blank lines, other staff, canonical + OG metadata, in the sitemap). `StaffCard` takes `href`; owners/management on `/about` stay non-clickable (no profile page). `StaffMember` has `slug`, `profile`, `experience`, `speciality`; `player.service` has `getSupportStaff/getStaffBySlug/getStaffSlugs` (slug = `slugify(name)`). Phase 9: staff become admin-managed together with the squad (same photo size 900x1200, 3:4).
 - Sample player photos are anonymous stock cricketers; avoid photos with other nations' kits or sponsor branding when swapping.
 - Phase 6: SEO and states. `src/app/layout.tsx` has default OG/Twitter metadata + `metadataBase`; `public/og-default.jpg` (1200x630), `src/app/icon.png` + `apple-icon.png` are generated from the crest. `sitemap.ts` lists all pages, published news, players and albums. `robots.ts` and the `robots` meta are `noindex` UNLESS the env `ALLOW_INDEXING=true` is set (set it, plus `NEXT_PUBLIC_SITE_URL`, only at real launch). JSON-LD: `SportsTeam` on home, `NewsArticle` on article pages (`JsonLd`). Canonical on home and article. 404: `app/not-found.tsx` (with Navbar/Footer) and `(site)/not-found.tsx`; `(site)/error.tsx` (try again) and `(site)/loading.tsx` (skeleton); skip-to-content link in `(site)/layout.tsx`; first images in lists use `priority`.
+- Deployment: demo is live on Vercel at https://brescia-nine.vercel.app (account `waliiqbal2020-3486`, team `wali-iqbals-projects`, project `brescia`, linked locally in `.vercel/`, which is git-ignored). Deployed with the CLI (`npx vercel deploy --prod --yes`) because the GitHub connection was not set up. Production env set on Vercel: `NEXT_PUBLIC_SITE_URL`. `ALLOW_INDEXING` is intentionally NOT set (site stays noindex). In Phases 7+ add `MONGODB_URI`, `JWT_SECRET`, `CLOUDINARY_*`, `SMTP_*` on Vercel too (`vercel env add NAME production`), then redeploy.
 - Footer "Privacy Policy · Terms" are plain text (no pages yet).
 - `/contact` form is visual only: it shows a thank-you message but sends nothing and saves nothing until Phase 10 (then POST `/api/messages`, saved in admin + emailed). The map is a Google Maps embed (no API key) of `siteConfig.contact.address`.
 - Next 16 conventions used: `PageProps<"/route">` global type, `await props.params` / `await props.searchParams`.
 - `NEXT_PUBLIC_SITE_URL` (optional env) sets the absolute site URL for share links and OG tags; default `http://localhost:3000`. Set it before deploying.
-- `.env.local` is filled (MongoDB verified, Cloudinary, JWT_SECRET; SMTP empty, needed in Phase 10). Real crest `public/images/logo.png` and hashtag `public/images/hashtag.png` (paths in `src/lib/site.ts`; originals in `design-assets/`). Footer subscribe form is visual only until Phase 10.
+- `.env.local` is filled (MongoDB verified, Cloudinary, JWT_SECRET; email uses EMAIL_HOST/PORT/USER/PASS; ADMIN_EMAIL still empty). Real crest `public/images/logo.png` and hashtag `public/images/hashtag.png` (paths in `src/lib/site.ts`; originals in `design-assets/`). Footer subscribe form is visual only until Phase 10.
 - Testing tip: headless Chrome via DevTools protocol works for screenshots at 390px / 1280px; in Git Bash set `MSYS_NO_PATHCONV=1` when passing URL paths as arguments.
 - Next dev badge "N" in the corner is dev only.

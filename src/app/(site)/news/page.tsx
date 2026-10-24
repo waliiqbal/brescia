@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/Button";
 import { NewsCard } from "@/components/site/NewsCard";
 import { NewsFilters } from "@/components/site/NewsFilters";
+import { Pagination } from "@/components/site/Pagination";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Section } from "@/components/site/Section";
 import {
-  getArticles,
+  getArticlesPage,
   isArticleCategory,
 } from "@/modules/articles/article.service";
 
@@ -21,7 +22,21 @@ export default async function NewsPage({ searchParams }: PageProps<"/news">) {
   const query = typeof params.q === "string" ? params.q.trim() : "";
   const category = isArticleCategory(rawCategory) ? rawCategory : undefined;
 
-  const articles = await getArticles({ category, query });
+  const rawPage = typeof params.page === "string" ? Number(params.page) : 1;
+  const { articles, page, pageCount } = await getArticlesPage({
+    category,
+    query,
+    page: rawPage,
+  });
+
+  const pageHref = (target: number) => {
+    const qs = new URLSearchParams();
+    if (category) qs.set("category", category);
+    if (query) qs.set("q", query);
+    if (target > 1) qs.set("page", String(target));
+    const text = qs.toString();
+    return text ? `/news?${text}` : "/news";
+  };
 
   return (
     <>
@@ -53,6 +68,8 @@ export default async function NewsPage({ searchParams }: PageProps<"/news">) {
             </ButtonLink>
           </div>
         )}
+
+        <Pagination page={page} pageCount={pageCount} hrefFor={pageHref} />
       </Section>
     </>
   );

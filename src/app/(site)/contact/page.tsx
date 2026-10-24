@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/Card";
 import { ContactForm } from "@/components/site/ContactForm";
 import { PageHeader } from "@/components/site/PageHeader";
 import { Section } from "@/components/site/Section";
+import { SocialIcon } from "@/components/site/SocialIcon";
 import { siteConfig } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -25,12 +26,6 @@ export default function ContactPage() {
       value: contact.email,
       href: `mailto:${contact.email}`,
     },
-    {
-      icon: "📞",
-      label: "Phone",
-      value: contact.phone,
-      href: `tel:${contact.phone.replace(/\s/g, "")}`,
-    },
   ];
 
   return (
@@ -39,7 +34,7 @@ export default function ContactPage() {
         eyebrow="We would love to hear from you"
         white="Contact"
         gold="Us"
-        subtitle="Questions, sponsorship, joining the club or just a message for the Lions? Write to us."
+        subtitle="Questions, sponsorship, joining the franchise or just a message for the Lions? Write to us."
       />
 
       <Section>
@@ -54,7 +49,7 @@ export default function ContactPage() {
           <div className="space-y-6 lg:col-span-2">
             <Card className="p-6 hover:translate-y-0">
               <h2 className="mb-5 font-heading text-2xl font-bold text-gold-light">
-                Club details
+                Franchise details
               </h2>
               <ul className="space-y-4">
                 {details.map((item) => (
@@ -89,9 +84,9 @@ export default function ContactPage() {
                     aria-label={s.label}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex size-9 items-center justify-center rounded-full border border-gold text-[10px] font-bold text-gold-light transition-colors hover:bg-gold hover:text-green-deep"
+                    className="flex size-10 items-center justify-center rounded-full border border-gold text-gold-light transition-colors hover:bg-gold hover:text-green-deep"
                   >
-                    {s.short}
+                    <SocialIcon platform={s.platform} />
                   </a>
                 ))}
               </div>

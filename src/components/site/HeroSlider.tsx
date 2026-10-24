@@ -7,11 +7,10 @@ import { cn } from "@/lib/utils";
 import { ButtonLink } from "@/components/ui/Button";
 import { Logo } from "./Logo";
 
-const AUTOPLAY_MS = 6000;
+const AUTOPLAY_MS = 5000;
 
 export function HeroSlider({ slides }: { slides: Banner[] }) {
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
   const touchStart = useRef<number | null>(null);
   const count = slides.length;
 
@@ -21,10 +20,12 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
   );
 
   useEffect(() => {
-    if (count < 2 || paused) return;
+    if (count < 2) return;
     const timer = setInterval(() => setIndex((i) => (i + 1) % count), AUTOPLAY_MS);
     return () => clearInterval(timer);
-  }, [count, paused, index]);
+    // `index` restarts the timer after a manual change, so a slide the visitor
+    // picked is never skipped straight away.
+  }, [count, index]);
 
   if (count === 0) return null;
 
@@ -33,8 +34,6 @@ export function HeroSlider({ slides }: { slides: Banner[] }) {
       aria-roledescription="carousel"
       aria-label="Featured"
       className="relative overflow-hidden border-b border-gold/20"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
       onTouchStart={(e) => {
         touchStart.current = e.touches[0].clientX;
       }}

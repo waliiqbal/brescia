@@ -4,6 +4,7 @@ import { FilterChips } from "@/components/site/FilterChips";
 import { PageHeader } from "@/components/site/PageHeader";
 import { PlayerCard } from "@/components/site/PlayerCard";
 import { Section } from "@/components/site/Section";
+import { ScrollRow } from "@/components/site/ScrollRow";
 import { StaffCard } from "@/components/site/StaffCard";
 import {
   getPlayers,
@@ -76,13 +77,21 @@ export default async function SquadPage({ searchParams }: PageProps<"/squad">) {
             gold="Staff"
             subtitle="Coaches and staff behind the squad"
           />
-          <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <ScrollRow scrollbar flush gap="gap-4 sm:gap-5">
             {staff.map((member) => (
-              <li key={member.id}>
-                <StaffCard member={member} />
-              </li>
+              <div
+                key={member.id}
+                className="flex w-[calc(50%-0.5rem)] shrink-0 snap-start sm:w-[calc(50%-0.625rem)] md:w-[calc(33.333%-0.8333rem)] lg:w-[calc(25%-0.9375rem)]"
+              >
+                <div className="w-full">
+                  <StaffCard
+                    member={member}
+                    href={`/squad/staff/${member.slug}`}
+                  />
+                </div>
+              </div>
             ))}
-          </ul>
+          </ScrollRow>
         </Section>
       )}
     </>

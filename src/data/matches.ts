@@ -15,8 +15,20 @@ export const teams: Team[] = [
 
 const HOME_GROUND = "Brescia Cricket Ground";
 
-export const matches: Match[] = [
-  // Upcoming
+/**
+ * The new season's schedule has not been announced yet, so the sample
+ * fixtures are switched off and the website shows "Coming soon" cards.
+ * Set to true to bring the sample upcoming matches back.
+ */
+const SCHEDULE_ANNOUNCED = false;
+
+/**
+ * The league has not started yet: no results exist and every team is on zero.
+ * Set to true to bring the sample results and the sample table back.
+ */
+const LEAGUE_STARTED = false;
+
+const upcomingMatches: Match[] = [
   {
     id: "m-1",
     homeTeamId: "brescia",
@@ -49,7 +61,9 @@ export const matches: Match[] = [
     ground: "Napoli Cricket Park",
     status: "upcoming",
   },
-  // Results
+];
+
+const resultMatches: Match[] = [
   {
     id: "m-5",
     homeTeamId: "brescia",
@@ -118,10 +132,36 @@ export const matches: Match[] = [
   },
 ];
 
-export const standings: Standing[] = [
+export const matches: Match[] = [
+  ...(SCHEDULE_ANNOUNCED ? upcomingMatches : []),
+  ...(LEAGUE_STARTED ? resultMatches : []),
+];
+
+const sampleStandings: Standing[] = [
   { teamId: "brescia", played: 6, won: 5, lost: 1, points: 10 },
   { teamId: "roma", played: 6, won: 4, lost: 2, points: 8 },
   { teamId: "milano", played: 6, won: 3, lost: 3, points: 6 },
   { teamId: "torino", played: 6, won: 2, lost: 4, points: 4 },
   { teamId: "napoli", played: 6, won: 1, lost: 5, points: 2 },
 ];
+
+/**
+ * The other teams of the league are not announced yet, so until the league
+ * starts the table shows only the Lions on zero. Set TEAMS_ANNOUNCED to true to
+ * list every team on zero.
+ */
+const TEAMS_ANNOUNCED = false;
+
+const zeroStandings: Standing[] = sampleStandings
+  .filter((row) => TEAMS_ANNOUNCED || row.teamId === "brescia")
+  .map((row) => ({
+    teamId: row.teamId,
+    played: 0,
+    won: 0,
+    lost: 0,
+    points: 0,
+  }));
+
+export const standings: Standing[] = LEAGUE_STARTED
+  ? sampleStandings
+  : zeroStandings;

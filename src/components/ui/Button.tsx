@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
 
-type Variant = "gold" | "outline" | "danger";
+type Variant = "gold" | "outline" | "danger" | "dark" | "outlineDark";
 
 const base =
   "inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-xs font-bold uppercase tracking-wider transition-colors disabled:cursor-not-allowed disabled:opacity-50";
@@ -12,6 +12,10 @@ const variants: Record<Variant, string> = {
   outline:
     "border border-gold text-gold-light hover:bg-gold hover:text-green-deep",
   danger: "bg-flag-red text-cream hover:bg-flag-red/80",
+  // For the light admin panel.
+  dark: "bg-green-dark text-cream hover:bg-green-card",
+  outlineDark:
+    "border border-green-dark/40 text-green-dark hover:bg-green-dark hover:text-cream",
 };
 
 type ButtonProps = ComponentProps<"button"> & { variant?: Variant };

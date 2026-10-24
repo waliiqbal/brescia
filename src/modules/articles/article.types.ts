@@ -13,13 +13,18 @@ export interface Article {
   slug: string;
   title: string;
   excerpt: string;
-  /** HTML. */
+  /** HTML, cleaned on save. */
   content: string;
   category: ArticleCategory;
+  /** Cover image address. Empty for a draft that has no cover yet. */
   image: string;
+  /** Cloudinary id of the cover (not set for demo images). */
+  imagePublicId?: string;
   /** ISO date string. */
   publishedAt: string;
   /** Drafts are never shown on the public site. */
   published: boolean;
+  /** "Show on homepage". */
   featured: boolean;
+  isDemo: boolean;
 }

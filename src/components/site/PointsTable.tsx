@@ -4,8 +4,10 @@ import { Card } from "@/components/ui/Card";
 import { TeamBadge } from "./TeamBadge";
 
 export function PointsTable({ rows }: { rows: StandingRow[] }) {
+  const notStarted = rows.every((row) => row.played === 0);
+
   return (
-    <Card className="overflow-hidden hover:translate-y-0">
+    <Card className="h-full overflow-hidden hover:translate-y-0">
       <h2 className="px-5 pt-5 font-heading text-2xl font-bold uppercase tracking-wide text-cream">
         Points <span className="text-gold-light">Table</span>
       </h2>
@@ -53,6 +55,13 @@ export function PointsTable({ rows }: { rows: StandingRow[] }) {
           ))}
         </tbody>
       </table>
+
+      {notStarted && (
+        <p className="border-t border-gold/15 px-5 py-4 text-xs leading-relaxed text-cream/60">
+          The league has not started yet. The table will update after the first
+          match.
+        </p>
+      )}
     </Card>
   );
 }

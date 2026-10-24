@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { HASHTAG_SRC, navLinks, siteConfig } from "@/lib/site";
+import { HASHTAG_SRC, PARTNER_LOGO_SRC, navLinks, siteConfig } from "@/lib/site";
 import { Logo } from "./Logo";
+import { SocialIcon } from "./SocialIcon";
 import { SubscribeForm } from "./SubscribeForm";
 
 const quickLinks = navLinks.filter((l) => l.href !== "/");
@@ -50,7 +51,6 @@ export function Footer() {
                 {contact.email}
               </a>
             </li>
-            <li>{contact.phone}</li>
           </ul>
         </div>
 
@@ -66,9 +66,9 @@ export function Footer() {
                 aria-label={s.label}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex size-9 items-center justify-center rounded-full border border-gold text-[10px] font-bold text-gold-light transition-colors hover:bg-gold hover:text-green-deep"
+                className="flex size-10 items-center justify-center rounded-full border border-gold text-gold-light transition-colors hover:bg-gold hover:text-green-deep"
               >
-                {s.short}
+                <SocialIcon platform={s.platform} />
               </a>
             ))}
           </div>
@@ -80,11 +80,21 @@ export function Footer() {
       </div>
 
       <div className="border-t border-gold/20">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-4 text-xs text-cream/50 sm:flex-row sm:justify-between sm:px-6">
-          <p>
-            © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
-          </p>
-          <p>Privacy Policy · Terms</p>
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 text-xs text-cream/50 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div className="flex flex-col gap-2 sm:flex-row sm:gap-6">
+            <p>
+              © {new Date().getFullYear()} {siteConfig.name}. All rights
+              reserved.
+            </p>
+            <p>Privacy Policy · Terms</p>
+          </div>
+          <Image
+            src={PARTNER_LOGO_SRC}
+            alt="Al-Fareed Sports"
+            width={1160}
+            height={675}
+            className="h-12 w-auto self-start rounded-md bg-white p-1 sm:self-auto"
+          />
         </div>
       </div>
     </footer>
